@@ -1,1 +1,401 @@
-import 'package:flutter/material.dart';\nimport '../models/booking.dart';\n\nclass MyBookingsScreen extends StatefulWidget {\n  const MyBookingsScreen({super.key});\n\n  @override\n  State<MyBookingsScreen> createState() => _MyBookingsScreenState();\n}\n\nclass _MyBookingsScreenState extends State<MyBookingsScreen> {\n  // Mock bookings data\n  final List<Booking> _bookings = [\n    Booking(\n      id: '1',\n      hotelId: '1',\n      hotelName: 'Grand Plaza Hotel',\n      hotelImage: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800',\n      checkInDate: DateTime.now().add(const Duration(days: 7)),\n      checkOutDate: DateTime.now().add(const Duration(days: 10)),\n      guests: 2,\n      rooms: 1,\n      totalPrice: 899.97,\n      status: 'confirmed',\n      bookingDate: DateTime.now().subtract(const Duration(days: 2)),\n    ),\n    Booking(\n      id: '2',\n      hotelId: '5',\n      hotelName: 'Tropical Paradise Resort',\n      hotelImage: 'https://images.unsplash.com/photo-1520256862855-398228c41684?w=800',\n      checkInDate: DateTime.now().add(const Duration(days: 30)),\n      checkOutDate: DateTime.now().add(const Duration(days: 35)),\n      guests: 4,\n      rooms: 2,\n      totalPrice: 3499.90,\n      status: 'confirmed',\n      bookingDate: DateTime.now().subtract(const Duration(days: 5)),\n    ),\n    Booking(\n      id: '3',\n      hotelId: '3',\n      hotelName: 'Mountain View Lodge',\n      hotelImage: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800',\n      checkInDate: DateTime.now().subtract(const Duration(days: 20)),\n      checkOutDate: DateTime.now().subtract(const Duration(days: 17)),\n      guests: 3,\n      rooms: 1,\n      totalPrice: 599.97,\n      status: 'completed',\n      bookingDate: DateTime.now().subtract(const Duration(days: 35)),\n    ),\n  ];\n\n  String _formatDate(DateTime date) {\n    return '${date.day}/${date.month}/${date.year}';\n  }\n\n  Color _getStatusColor(String status) {\n    switch (status) {\n      case 'confirmed':\n        return Colors.green;\n      case 'pending':\n        return Colors.orange;\n      case 'cancelled':\n        return Colors.red;\n      case 'completed':\n        return Colors.blue;\n      default:\n        return Colors.grey;\n    }\n  }\n\n  List<Booking> get upcomingBookings {\n    return _bookings\n        .where((booking) => booking.checkInDate.isAfter(DateTime.now()))\n        .toList();\n  }\n\n  List<Booking> get pastBookings {\n    return _bookings\n        .where((booking) => booking.checkOutDate.isBefore(DateTime.now()))\n        .toList();\n  }\n\n  @override\n  Widget build(BuildContext context) {\n    return DefaultTabController(\n      length: 2,\n      child: Scaffold(\n        appBar: AppBar(\n          title: const Text('My Bookings'),\n          centerTitle: true,\n          bottom: const TabBar(\n            tabs: [\n              Tab(text: 'Upcoming', icon: Icon(Icons.calendar_month)),\n              Tab(text: 'Past', icon: Icon(Icons.history)),\n            ],\n          ),\n        ),\n        body: TabBarView(\n          children: [\n            _buildBookingsList(upcomingBookings, 'upcoming'),\n            _buildBookingsList(pastBookings, 'past'),\n          ],\n        ),\n      ),\n    );\n  }\n\n  Widget _buildBookingsList(List<Booking> bookings, String type) {\n    if (bookings.isEmpty) {\n      return Center(\n        child: Column(\n          mainAxisAlignment: MainAxisAlignment.center,\n          children: [\n            Icon(\n              type == 'upcoming' ? Icons.calendar_today : Icons.history,\n              size: 64,\n              color: Colors.grey[400],\n            ),\n            const SizedBox(height: 16),\n            Text(\n              'No ${type} bookings',\n              style: TextStyle(color: Colors.grey[600], fontSize: 18),\n            ),\n            const SizedBox(height: 8),\n            Text(\n              type == 'upcoming'\n                  ? 'Book your next stay now!'\n                  : 'Your past bookings will appear here',\n              style: TextStyle(color: Colors.grey[500], fontSize: 14),\n            ),\n          ],\n        ),\n      );\n    }\n\n    return ListView.builder(\n      padding: const EdgeInsets.all(16),\n      itemCount: bookings.length,\n      itemBuilder: (context, index) {\n        final booking = bookings[index];\n        return Card(\n          margin: const EdgeInsets.only(bottom: 16),\n          elevation: 2,\n          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),\n          child: InkWell(\n            onTap: () {\n              _showBookingDetails(context, booking);\n            },\n            borderRadius: BorderRadius.circular(12),\n            child: Padding(\n              padding: const EdgeInsets.all(12),\n              child: Column(\n                crossAxisAlignment: CrossAxisAlignment.start,\n                children: [\n                  Row(\n                    children: [\n                      ClipRRect(\n                        borderRadius: BorderRadius.circular(8),\n                        child: Image.network(\n                          booking.hotelImage,\n                          width: 100,\n                          height: 100,\n                          fit: BoxFit.cover,\n                          errorBuilder: (context, error, stackTrace) {\n                            return Container(\n                              width: 100,\n                              height: 100,\n                              color: Colors.grey[300],\n                              child: const Icon(Icons.hotel, size: 40),\n                            );\n                          },\n                        ),\n                      ),\n                      const SizedBox(width: 12),\n                      Expanded(\n                        child: Column(\n                          crossAxisAlignment: CrossAxisAlignment.start,\n                          children: [\n                            Text(\n                              booking.hotelName,\n                              style: const TextStyle(\n                                fontWeight: FontWeight.bold,\n                                fontSize: 16,\n                              ),\n                              maxLines: 2,\n                              overflow: TextOverflow.ellipsis,\n                            ),\n                            const SizedBox(height: 8),\n                            Container(\n                              padding: const EdgeInsets.symmetric(\n                                horizontal: 8,\n                                vertical: 4,\n                              ),\n                              decoration: BoxDecoration(\n                                color: _getStatusColor(booking.status).withOpacity(0.2),\n                                borderRadius: BorderRadius.circular(12),\n                              ),\n                              child: Text(\n                                booking.status.toUpperCase(),\n                                style: TextStyle(\n                                  color: _getStatusColor(booking.status),\n                                  fontSize: 10,\n                                  fontWeight: FontWeight.bold,\n                                ),\n                              ),\n                            ),\n                            const SizedBox(height: 8),\n                            Text(\n                              '\$${booking.totalPrice.toStringAsFixed(2)}',\n                              style: TextStyle(\n                                color: Theme.of(context).colorScheme.primary,\n                                fontWeight: FontWeight.bold,\n                                fontSize: 18,\n                              ),\n                            ),\n                          ],\n                        ),\n                      ),\n                    ],\n                  ),\n                  const Divider(height: 24),\n                  Row(\n                    children: [\n                      Expanded(\n                        child: Column(\n                          crossAxisAlignment: CrossAxisAlignment.start,\n                          children: [\n                            Text(\n                              'Check-in',\n                              style: TextStyle(\n                                color: Colors.grey[600],\n                                fontSize: 12,\n                              ),\n                            ),\n                            const SizedBox(height: 4),\n                            Text(\n                              _formatDate(booking.checkInDate),\n                              style: const TextStyle(\n                                fontWeight: FontWeight.w600,\n                                fontSize: 14,\n                              ),\n                            ),\n                          ],\n                        ),\n                      ),\n                      const Icon(Icons.arrow_forward, color: Colors.grey),\n                      Expanded(\n                        child: Column(\n                          crossAxisAlignment: CrossAxisAlignment.end,\n                          children: [\n                            Text(\n                              'Check-out',\n                              style: TextStyle(\n                                color: Colors.grey[600],\n                                fontSize: 12,\n                              ),\n                            ),\n                            const SizedBox(height: 4),\n                            Text(\n                              _formatDate(booking.checkOutDate),\n                              style: const TextStyle(\n                                fontWeight: FontWeight.w600,\n                                fontSize: 14,\n                              ),\n                            ),\n                          ],\n                        ),\n                      ),\n                    ],\n                  ),\n                  const SizedBox(height: 12),\n                  Row(\n                    children: [\n                      Icon(Icons.nights_stay, size: 16, color: Colors.grey[600]),\n                      const SizedBox(width: 4),\n                      Text(\n                        '${booking.numberOfNights} nights',\n                        style: TextStyle(color: Colors.grey[600], fontSize: 12),\n                      ),\n                      const SizedBox(width: 16),\n                      Icon(Icons.people, size: 16, color: Colors.grey[600]),\n                      const SizedBox(width: 4),\n                      Text(\n                        '${booking.guests} guests',\n                        style: TextStyle(color: Colors.grey[600], fontSize: 12),\n                      ),\n                      const SizedBox(width: 16),\n                      Icon(Icons.meeting_room, size: 16, color: Colors.grey[600]),\n                      const SizedBox(width: 4),\n                      Text(\n                        '${booking.rooms} room(s)',\n                        style: TextStyle(color: Colors.grey[600], fontSize: 12),\n                      ),\n                    ],\n                  ),\n                ],\n              ),\n            ),\n          ),\n        );\n      },\n    );\n  }\n\n  void _showBookingDetails(BuildContext context, Booking booking) {\n    showModalBottomSheet(\n      context: context,\n      shape: const RoundedRectangleBorder(\n        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),\n      ),\n      builder: (context) => Padding(\n        padding: const EdgeInsets.all(24),\n        child: Column(\n          mainAxisSize: MainAxisSize.min,\n          crossAxisAlignment: CrossAxisAlignment.start,\n          children: [\n            Row(\n              mainAxisAlignment: MainAxisAlignment.spaceBetween,\n              children: [\n                const Text(\n                  'Booking Details',\n                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),\n                ),\n                IconButton(\n                  onPressed: () => Navigator.pop(context),\n                  icon: const Icon(Icons.close),\n                ),\n              ],\n            ),\n            const SizedBox(height: 16),\n            _buildDetailRow('Booking ID', booking.id),\n            _buildDetailRow('Hotel', booking.hotelName),\n            _buildDetailRow('Check-in', _formatDate(booking.checkInDate)),\n            _buildDetailRow('Check-out', _formatDate(booking.checkOutDate)),\n            _buildDetailRow('Nights', '${booking.numberOfNights}'),\n            _buildDetailRow('Guests', '${booking.guests}'),\n            _buildDetailRow('Rooms', '${booking.rooms}'),\n            _buildDetailRow('Status', booking.status.toUpperCase()),\n            _buildDetailRow('Booked on', _formatDate(booking.bookingDate)),\n            const Divider(height: 24),\n            _buildDetailRow(\n              'Total Amount',\n              '\$${booking.totalPrice.toStringAsFixed(2)}',\n              isTotal: true,\n            ),\n            const SizedBox(height: 16),\n            if (booking.status == 'confirmed') ..[\n              SizedBox(\n                width: double.infinity,\n                child: ElevatedButton(\n                  onPressed: () {\n                    Navigator.pop(context);\n                    ScaffoldMessenger.of(context).showSnackBar(\n                      const SnackBar(content: Text('Cancellation policy applies')),\n                    );\n                  },\n                  style: ElevatedButton.styleFrom(\n                    backgroundColor: Colors.red,\n                    foregroundColor: Colors.white,\n                    padding: const EdgeInsets.symmetric(vertical: 12),\n                  ),\n                  child: const Text('Cancel Booking'),\n                ),\n              ),\n            ],\n          ],\n        ),\n      ),\n    );\n  }\n\n  Widget _buildDetailRow(String label, String value, {bool isTotal = false}) {\n    return Padding(\n      padding: const EdgeInsets.only(bottom: 12),\n      child: Row(\n        mainAxisAlignment: MainAxisAlignment.spaceBetween,\n        children: [\n          Text(\n            label,\n            style: TextStyle(\n              color: Colors.grey[600],\n              fontSize: isTotal ? 16 : 14,\n              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,\n            ),\n          ),\n          Text(\n            value,\n            style: TextStyle(\n              fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,\n              fontSize: isTotal ? 20 : 14,\n              color: isTotal ? Theme.of(context).colorScheme.primary : Colors.black,\n            ),\n          ),\n        ],\n      ),\n    );\n  }\n}\n
+import 'package:flutter/material.dart';
+import '../models/booking.dart';
+
+class MyBookingsScreen extends StatefulWidget {
+  const MyBookingsScreen({super.key});
+
+  @override
+  State<MyBookingsScreen> createState() => _MyBookingsScreenState();
+}
+
+class _MyBookingsScreenState extends State<MyBookingsScreen> {
+  // Mock bookings data
+  final List<Booking> _bookings = [
+    Booking(
+      id: '1',
+      hotelId: '1',
+      hotelName: 'Grand Plaza Hotel',
+      hotelImage: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800',
+      checkInDate: DateTime.now().add(const Duration(days: 7)),
+      checkOutDate: DateTime.now().add(const Duration(days: 10)),
+      guests: 2,
+      rooms: 1,
+      totalPrice: 899.97,
+      status: 'confirmed',
+      bookingDate: DateTime.now().subtract(const Duration(days: 2)),
+    ),
+    Booking(
+      id: '2',
+      hotelId: '5',
+      hotelName: 'Tropical Paradise Resort',
+      hotelImage: 'https://images.unsplash.com/photo-1520256862855-398228c41684?w=800',
+      checkInDate: DateTime.now().add(const Duration(days: 30)),
+      checkOutDate: DateTime.now().add(const Duration(days: 35)),
+      guests: 4,
+      rooms: 2,
+      totalPrice: 3499.90,
+      status: 'confirmed',
+      bookingDate: DateTime.now().subtract(const Duration(days: 5)),
+    ),
+    Booking(
+      id: '3',
+      hotelId: '3',
+      hotelName: 'Mountain View Lodge',
+      hotelImage: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800',
+      checkInDate: DateTime.now().subtract(const Duration(days: 20)),
+      checkOutDate: DateTime.now().subtract(const Duration(days: 17)),
+      guests: 3,
+      rooms: 1,
+      totalPrice: 599.97,
+      status: 'completed',
+      bookingDate: DateTime.now().subtract(const Duration(days: 35)),
+    ),
+  ];
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'confirmed':
+        return Colors.green;
+      case 'pending':
+        return Colors.orange;
+      case 'cancelled':
+        return Colors.red;
+      case 'completed':
+        return Colors.blue;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  List<Booking> get upcomingBookings {
+    return _bookings
+        .where((booking) => booking.checkInDate.isAfter(DateTime.now()))
+        .toList();
+  }
+
+  List<Booking> get pastBookings {
+    return _bookings
+        .where((booking) => booking.checkOutDate.isBefore(DateTime.now()))
+        .toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('My Bookings'),
+          centerTitle: true,
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Upcoming', icon: Icon(Icons.calendar_month)),
+              Tab(text: 'Past', icon: Icon(Icons.history)),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            _buildBookingsList(upcomingBookings, 'upcoming'),
+            _buildBookingsList(pastBookings, 'past'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBookingsList(List<Booking> bookings, String type) {
+    if (bookings.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              type == 'upcoming' ? Icons.calendar_today : Icons.history,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No ${type} bookings',
+              style: TextStyle(color: Colors.grey[600], fontSize: 18),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              type == 'upcoming'
+                  ? 'Book your next stay now!'
+                  : 'Your past bookings will appear here',
+              style: TextStyle(color: Colors.grey[500], fontSize: 14),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: bookings.length,
+      itemBuilder: (context, index) {
+        final booking = bookings[index];
+        return Card(
+          margin: const EdgeInsets.only(bottom: 16),
+          elevation: 2,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: InkWell(
+            onTap: () {
+              _showBookingDetails(context, booking);
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          booking.hotelImage,
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 100,
+                              height: 100,
+                              color: Colors.grey[300],
+                              child: const Icon(Icons.hotel, size: 40),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              booking.hotelName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _getStatusColor(booking.status).withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                booking.status.toUpperCase(),
+                                style: TextStyle(
+                                  color: _getStatusColor(booking.status),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '\$${booking.totalPrice.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Check-in',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _formatDate(booking.checkInDate),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward, color: Colors.grey),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              'Check-out',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _formatDate(booking.checkOutDate),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Icon(Icons.nights_stay, size: 16, color: Colors.grey[600]),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${booking.numberOfNights} nights',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      ),
+                      const SizedBox(width: 16),
+                      Icon(Icons.people, size: 16, color: Colors.grey[600]),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${booking.guests} guests',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      ),
+                      const SizedBox(width: 16),
+                      Icon(Icons.meeting_room, size: 16, color: Colors.grey[600]),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${booking.rooms} room(s)',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showBookingDetails(BuildContext context, Booking booking) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Booking Details',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildDetailRow('Booking ID', booking.id),
+            _buildDetailRow('Hotel', booking.hotelName),
+            _buildDetailRow('Check-in', _formatDate(booking.checkInDate)),
+            _buildDetailRow('Check-out', _formatDate(booking.checkOutDate)),
+            _buildDetailRow('Nights', '${booking.numberOfNights}'),
+            _buildDetailRow('Guests', '${booking.guests}'),
+            _buildDetailRow('Rooms', '${booking.rooms}'),
+            _buildDetailRow('Status', booking.status.toUpperCase()),
+            _buildDetailRow('Booked on', _formatDate(booking.bookingDate)),
+            const Divider(height: 24),
+            _buildDetailRow(
+              'Total Amount',
+              '\$${booking.totalPrice.toStringAsFixed(2)}',
+              isTotal: true,
+            ),
+            const SizedBox(height: 16),
+            if (booking.status == 'confirmed') ...[
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Cancellation policy applies')),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text('Cancel Booking'),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value, {bool isTotal = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: isTotal ? 16 : 14,
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
+              fontSize: isTotal ? 20 : 14,
+              color: isTotal ? Theme.of(context).colorScheme.primary : Colors.black,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

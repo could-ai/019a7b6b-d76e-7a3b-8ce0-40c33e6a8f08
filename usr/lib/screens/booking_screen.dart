@@ -1,1 +1,381 @@
-import 'package:flutter/material.dart';\nimport '../models/hotel.dart';\n\nclass BookingScreen extends StatefulWidget {\n  const BookingScreen({super.key});\n\n  @override\n  State<BookingScreen> createState() => _BookingScreenState();\n}\n\nclass _BookingScreenState extends State<BookingScreen> {\n  DateTime? _checkInDate;\n  DateTime? _checkOutDate;\n  int _guests = 1;\n  int _rooms = 1;\n\n  Future<void> _selectCheckInDate(BuildContext context) async {\n    final DateTime? picked = await showDatePicker(\n      context: context,\n      initialDate: DateTime.now().add(const Duration(days: 1)),\n      firstDate: DateTime.now(),\n      lastDate: DateTime.now().add(const Duration(days: 365)),\n    );\n    if (picked != null) {\n      setState(() {\n        _checkInDate = picked;\n        if (_checkOutDate != null && _checkOutDate!.isBefore(_checkInDate!)) {\n          _checkOutDate = null;\n        }\n      });\n    }\n  }\n\n  Future<void> _selectCheckOutDate(BuildContext context) async {\n    if (_checkInDate == null) {\n      ScaffoldMessenger.of(context).showSnackBar(\n        const SnackBar(content: Text('Please select check-in date first')),\n      );\n      return;\n    }\n\n    final DateTime? picked = await showDatePicker(\n      context: context,\n      initialDate: _checkInDate!.add(const Duration(days: 1)),\n      firstDate: _checkInDate!.add(const Duration(days: 1)),\n      lastDate: DateTime.now().add(const Duration(days: 365)),\n    );\n    if (picked != null) {\n      setState(() {\n        _checkOutDate = picked;\n      });\n    }\n  }\n\n  int get numberOfNights {\n    if (_checkInDate == null || _checkOutDate == null) return 0;\n    return _checkOutDate!.difference(_checkInDate!).inDays;\n  }\n\n  double calculateTotal(double pricePerNight) {\n    return pricePerNight * numberOfNights * _rooms;\n  }\n\n  void _confirmBooking(BuildContext context, Hotel hotel) {\n    if (_checkInDate == null || _checkOutDate == null) {\n      ScaffoldMessenger.of(context).showSnackBar(\n        const SnackBar(content: Text('Please select check-in and check-out dates')),\n      );\n      return;\n    }\n\n    showDialog(\n      context: context,\n      builder: (context) => AlertDialog(\n        title: const Text('Booking Confirmed!'),\n        content: Column(\n          mainAxisSize: MainAxisSize.min,\n          crossAxisAlignment: CrossAxisAlignment.start,\n          children: [\n            Text('Hotel: ${hotel.name}'),\n            Text('Check-in: ${_formatDate(_checkInDate!)}'),\n            Text('Check-out: ${_formatDate(_checkOutDate!)}'),\n            Text('Guests: $_guests'),\n            Text('Rooms: $_rooms'),\n            const SizedBox(height: 8),\n            Text(\n              'Total: \$${calculateTotal(hotel.pricePerNight).toStringAsFixed(2)}',\n              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),\n            ),\n          ],\n        ),\n        actions: [\n          TextButton(\n            onPressed: () {\n              Navigator.pop(context);\n              Navigator.pop(context);\n              Navigator.pop(context);\n            },\n            child: const Text('OK'),\n          ),\n        ],\n      ),\n    );\n  }\n\n  String _formatDate(DateTime date) {\n    return '${date.day}/${date.month}/${date.year}';\n  }\n\n  @override\n  Widget build(BuildContext context) {\n    final hotel = ModalRoute.of(context)!.settings.arguments as Hotel;\n\n    return Scaffold(\n      appBar: AppBar(\n        title: const Text('Book Your Stay'),\n        centerTitle: true,\n      ),\n      body: SingleChildScrollView(\n        child: Padding(\n          padding: const EdgeInsets.all(16),\n          child: Column(\n            crossAxisAlignment: CrossAxisAlignment.start,\n            children: [\n              // Hotel Summary Card\n              Card(\n                elevation: 2,\n                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),\n                child: Padding(\n                  padding: const EdgeInsets.all(12),\n                  child: Row(\n                    children: [\n                      ClipRRect(\n                        borderRadius: BorderRadius.circular(8),\n                        child: Image.network(\n                          hotel.imageUrl,\n                          width: 80,\n                          height: 80,\n                          fit: BoxFit.cover,\n                          errorBuilder: (context, error, stackTrace) {\n                            return Container(\n                              width: 80,\n                              height: 80,\n                              color: Colors.grey[300],\n                              child: const Icon(Icons.hotel),\n                            );\n                          },\n                        ),\n                      ),\n                      const SizedBox(width: 12),\n                      Expanded(\n                        child: Column(\n                          crossAxisAlignment: CrossAxisAlignment.start,\n                          children: [\n                            Text(\n                              hotel.name,\n                              style: const TextStyle(\n                                fontWeight: FontWeight.bold,\n                                fontSize: 16,\n                              ),\n                              maxLines: 2,\n                              overflow: TextOverflow.ellipsis,\n                            ),\n                            const SizedBox(height: 4),\n                            Row(\n                              children: [\n                                const Icon(Icons.location_on, size: 14, color: Colors.grey),\n                                const SizedBox(width: 4),\n                                Expanded(\n                                  child: Text(\n                                    hotel.location,\n                                    style: TextStyle(color: Colors.grey[600], fontSize: 12),\n                                    maxLines: 1,\n                                    overflow: TextOverflow.ellipsis,\n                                  ),\n                                ),\n                              ],\n                            ),\n                            const SizedBox(height: 4),\n                            Text(\n                              '\$${hotel.pricePerNight.toStringAsFixed(2)}/night',\n                              style: TextStyle(\n                                color: Theme.of(context).colorScheme.primary,\n                                fontWeight: FontWeight.bold,\n                                fontSize: 14,\n                              ),\n                            ),\n                          ],\n                        ),\n                      ),\n                    ],\n                  ),\n                ),\n              ),\n              const SizedBox(height: 24),\n              // Booking Details\n              const Text(\n                'Booking Details',\n                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),\n              ),\n              const SizedBox(height: 16),\n              // Check-in Date\n              _buildDateSelector(\n                context,\n                'Check-in Date',\n                _checkInDate,\n                _selectCheckInDate,\n              ),\n              const SizedBox(height: 16),\n              // Check-out Date\n              _buildDateSelector(\n                context,\n                'Check-out Date',\n                _checkOutDate,\n                _selectCheckOutDate,\n              ),\n              const SizedBox(height: 16),\n              // Guests Counter\n              _buildCounter('Number of Guests', _guests, (value) {\n                setState(() {\n                  _guests = value;\n                });\n              }),\n              const SizedBox(height: 16),\n              // Rooms Counter\n              _buildCounter('Number of Rooms', _rooms, (value) {\n                setState(() {\n                  _rooms = value;\n                });\n              }),\n              const SizedBox(height: 24),\n              // Price Summary\n              if (numberOfNights > 0) ..[\n                Container(\n                  padding: const EdgeInsets.all(16),\n                  decoration: BoxDecoration(\n                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),\n                    borderRadius: BorderRadius.circular(12),\n                  ),\n                  child: Column(\n                    children: [\n                      Row(\n                        mainAxisAlignment: MainAxisAlignment.spaceBetween,\n                        children: [\n                          const Text('Price per night:'),\n                          Text('\$${hotel.pricePerNight.toStringAsFixed(2)}'),\n                        ],\n                      ),\n                      const SizedBox(height: 8),\n                      Row(\n                        mainAxisAlignment: MainAxisAlignment.spaceBetween,\n                        children: [\n                          Text('$numberOfNights nights × $_rooms room(s):'),\n                          Text('\$${(hotel.pricePerNight * numberOfNights * _rooms).toStringAsFixed(2)}'),\n                        ],\n                      ),\n                      const Divider(height: 24),\n                      Row(\n                        mainAxisAlignment: MainAxisAlignment.spaceBetween,\n                        children: [\n                          const Text(\n                            'Total:',\n                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),\n                          ),\n                          Text(\n                            '\$${calculateTotal(hotel.pricePerNight).toStringAsFixed(2)}',\n                            style: TextStyle(\n                              fontWeight: FontWeight.bold,\n                              fontSize: 24,\n                              color: Theme.of(context).colorScheme.primary,\n                            ),\n                          ),\n                        ],\n                      ),\n                    ],\n                  ),\n                ),\n                const SizedBox(height: 24),\n              ],\n              // Book Button\n              SizedBox(\n                width: double.infinity,\n                child: ElevatedButton(\n                  onPressed: () => _confirmBooking(context, hotel),\n                  style: ElevatedButton.styleFrom(\n                    backgroundColor: Theme.of(context).colorScheme.primary,\n                    foregroundColor: Colors.white,\n                    padding: const EdgeInsets.symmetric(vertical: 16),\n                    shape: RoundedRectangleBorder(\n                      borderRadius: BorderRadius.circular(12),\n                    ),\n                  ),\n                  child: const Text(\n                    'Confirm Booking',\n                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),\n                  ),\n                ),\n              ),\n              const SizedBox(height: 16),\n            ],\n          ),\n        ),\n      ),\n    );\n  }\n\n  Widget _buildDateSelector(\n    BuildContext context,\n    String label,\n    DateTime? date,\n    Function(BuildContext) onTap,\n  ) {\n    return InkWell(\n      onTap: () => onTap(context),\n      child: Container(\n        padding: const EdgeInsets.all(16),\n        decoration: BoxDecoration(\n          border: Border.all(color: Colors.grey[300]!),\n          borderRadius: BorderRadius.circular(12),\n        ),\n        child: Row(\n          mainAxisAlignment: MainAxisAlignment.spaceBetween,\n          children: [\n            Column(\n              crossAxisAlignment: CrossAxisAlignment.start,\n              children: [\n                Text(\n                  label,\n                  style: TextStyle(color: Colors.grey[600], fontSize: 12),\n                ),\n                const SizedBox(height: 4),\n                Text(\n                  date != null ? _formatDate(date) : 'Select date',\n                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),\n                ),\n              ],\n            ),\n            Icon(Icons.calendar_today, color: Theme.of(context).colorScheme.primary),\n          ],\n        ),\n      ),\n    );\n  }\n\n  Widget _buildCounter(String label, int value, Function(int) onChanged) {\n    return Container(\n      padding: const EdgeInsets.all(16),\n      decoration: BoxDecoration(\n        border: Border.all(color: Colors.grey[300]!),\n        borderRadius: BorderRadius.circular(12),\n      ),\n      child: Row(\n        mainAxisAlignment: MainAxisAlignment.spaceBetween,\n        children: [\n          Text(\n            label,\n            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),\n          ),\n          Row(\n            children: [\n              IconButton(\n                onPressed: value > 1 ? () => onChanged(value - 1) : null,\n                icon: const Icon(Icons.remove_circle_outline),\n                color: Theme.of(context).colorScheme.primary,\n              ),\n              Text(\n                value.toString(),\n                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),\n              ),\n              IconButton(\n                onPressed: value < 10 ? () => onChanged(value + 1) : null,\n                icon: const Icon(Icons.add_circle_outline),\n                color: Theme.of(context).colorScheme.primary,\n              ),\n            ],\n          ),\n        ],\n      ),\n    );\n  }\n}\n
+import 'package:flutter/material.dart';
+import '../models/hotel.dart';
+
+class BookingScreen extends StatefulWidget {
+  const BookingScreen({super.key});
+
+  @override
+  State<BookingScreen> createState() => _BookingScreenState();
+}
+
+class _BookingScreenState extends State<BookingScreen> {
+  DateTime? _checkInDate;
+  DateTime? _checkOutDate;
+  int _guests = 1;
+  int _rooms = 1;
+
+  Future<void> _selectCheckInDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(const Duration(days: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null) {
+      setState(() {
+        _checkInDate = picked;
+        if (_checkOutDate != null && _checkOutDate!.isBefore(_checkInDate!)) {
+          _checkOutDate = null;
+        }
+      });
+    }
+  }
+
+  Future<void> _selectCheckOutDate(BuildContext context) async {
+    if (_checkInDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select check-in date first')),
+      );
+      return;
+    }
+
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _checkInDate!.add(const Duration(days: 1)),
+      firstDate: _checkInDate!.add(const Duration(days: 1)),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null) {
+      setState(() {
+        _checkOutDate = picked;
+      });
+    }
+  }
+
+  int get numberOfNights {
+    if (_checkInDate == null || _checkOutDate == null) return 0;
+    return _checkOutDate!.difference(_checkInDate!).inDays;
+  }
+
+  double calculateTotal(double pricePerNight) {
+    return pricePerNight * numberOfNights * _rooms;
+  }
+
+  void _confirmBooking(BuildContext context, Hotel hotel) {
+    if (_checkInDate == null || _checkOutDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select check-in and check-out dates')),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Booking Confirmed!'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Hotel: ${hotel.name}'),
+            Text('Check-in: ${_formatDate(_checkInDate!)}'),
+            Text('Check-out: ${_formatDate(_checkOutDate!)}'),
+            Text('Guests: $_guests'),
+            Text('Rooms: $_rooms'),
+            const SizedBox(height: 8),
+            Text(
+              'Total: \$${calculateTotal(hotel.pricePerNight).toStringAsFixed(2)}',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pop(context);
+              Navigator.pop(context);
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hotel = ModalRoute.of(context)!.settings.arguments as Hotel;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Book Your Stay'),
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Hotel Summary Card
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          hotel.imageUrl,
+                          width: 80,
+                          height: 80,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 80,
+                              height: 80,
+                              color: Colors.grey[300],
+                              child: const Icon(Icons.hotel),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              hotel.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    hotel.location,
+                                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '\$${hotel.pricePerNight.toStringAsFixed(2)}/night',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Booking Details
+              const Text(
+                'Booking Details',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              // Check-in Date
+              _buildDateSelector(
+                context,
+                'Check-in Date',
+                _checkInDate,
+                _selectCheckInDate,
+              ),
+              const SizedBox(height: 16),
+              // Check-out Date
+              _buildDateSelector(
+                context,
+                'Check-out Date',
+                _checkOutDate,
+                _selectCheckOutDate,
+              ),
+              const SizedBox(height: 16),
+              // Guests Counter
+              _buildCounter('Number of Guests', _guests, (value) {
+                setState(() {
+                  _guests = value;
+                });
+              }),
+              const SizedBox(height: 16),
+              // Rooms Counter
+              _buildCounter('Number of Rooms', _rooms, (value) {
+                setState(() {
+                  _rooms = value;
+                });
+              }),
+              const SizedBox(height: 24),
+              // Price Summary
+              if (numberOfNights > 0) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Price per night:'),
+                          Text('\$${hotel.pricePerNight.toStringAsFixed(2)}'),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('$numberOfNights nights × $_rooms room(s):'),
+                          Text('\$${(hotel.pricePerNight * numberOfNights * _rooms).toStringAsFixed(2)}'),
+                        ],
+                      ),
+                      const Divider(height: 24),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Total:',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                          ),
+                          Text(
+                            '\$${calculateTotal(hotel.pricePerNight).toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 24,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
+              // Book Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => _confirmBooking(context, hotel),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Confirm Booking',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDateSelector(
+    BuildContext context,
+    String label,
+    DateTime? date,
+    Function(BuildContext) onTap,
+  ) {
+    return InkWell(
+      onTap: () => onTap(context),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey[300]!),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  date != null ? _formatDate(date) : 'Select date',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+            Icon(Icons.calendar_today, color: Theme.of(context).colorScheme.primary),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCounter(String label, int value, Function(int) onChanged) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          ),
+          Row(
+            children: [
+              IconButton(
+                onPressed: value > 1 ? () => onChanged(value - 1) : null,
+                icon: const Icon(Icons.remove_circle_outline),
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              Text(
+                value.toString(),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              IconButton(
+                onPressed: value < 10 ? () => onChanged(value + 1) : null,
+                icon: const Icon(Icons.add_circle_outline),
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}

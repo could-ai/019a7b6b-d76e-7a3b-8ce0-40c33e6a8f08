@@ -1,1 +1,31 @@
-class Booking {\n  final String id;\n  final String hotelId;\n  final String hotelName;\n  final String hotelImage;\n  final DateTime checkInDate;\n  final DateTime checkOutDate;\n  final int guests;\n  final int rooms;\n  final double totalPrice;\n  final String status; // confirmed, pending, cancelled\n  final DateTime bookingDate;\n\n  Booking({\n    required this.id,\n    required this.hotelId,\n    required this.hotelName,\n    required this.hotelImage,\n    required this.checkInDate,\n    required this.checkOutDate,\n    required this.guests,\n    required this.rooms,\n    required this.totalPrice,\n    required this.status,\n    required this.bookingDate,\n  });\n\n  int get numberOfNights {\n    return checkOutDate.difference(checkInDate).inDays;\n  }\n}\n
+class Booking {
+  final String id;
+  final String hotelId;
+  final String hotelName;
+  final String hotelImage;
+  final DateTime checkInDate;
+  final DateTime checkOutDate;
+  final int guests;
+  final int rooms;
+  final double totalPrice;
+  final String status; // confirmed, pending, cancelled
+  final DateTime bookingDate;
+
+  Booking({
+    required this.id,
+    required this.hotelId,
+    required this.hotelName,
+    required this.hotelImage,
+    required this.checkInDate,
+    required this.checkOutDate,
+    required this.guests,
+    required this.rooms,
+    required this.totalPrice,
+    required this.status,
+    required this.bookingDate,
+  });
+
+  int get numberOfNights {
+    return checkOutDate.difference(checkInDate).inDays;
+  }
+}

@@ -1,1 +1,183 @@
-import 'package:flutter/material.dart';\nimport '../models/hotel.dart';\nimport '../services/hotel_service.dart';\nimport '../widgets/hotel_card.dart';\n\nclass HomeScreen extends StatefulWidget {\n  const HomeScreen({super.key});\n\n  @override\n  State<HomeScreen> createState() => _HomeScreenState();\n}\n\nclass _HomeScreenState extends State<HomeScreen> {\n  final TextEditingController _searchController = TextEditingController();\n  List<Hotel> _hotels = [];\n  List<Hotel> _filteredHotels = [];\n  int _selectedIndex = 0;\n\n  @override\n  void initState() {\n    super.initState();\n    _loadHotels();\n  }\n\n  void _loadHotels() {\n    setState(() {\n      _hotels = HotelService.getHotels();\n      _filteredHotels = _hotels;\n    });\n  }\n\n  void _searchHotels(String query) {\n    setState(() {\n      _filteredHotels = HotelService.searchHotels(query);\n    });\n  }\n\n  void _onNavBarTap(int index) {\n    setState(() {\n      _selectedIndex = index;\n    });\n    \n    if (index == 1) {\n      Navigator.pushNamed(context, '/my-bookings');\n    }\n  }\n\n  @override\n  Widget build(BuildContext context) {\n    return Scaffold(\n      body: SafeArea(\n        child: Column(\n          children: [\n            // Header\n            Container(\n              padding: const EdgeInsets.all(16),\n              decoration: BoxDecoration(\n                color: Theme.of(context).colorScheme.primary,\n                borderRadius: const BorderRadius.only(\n                  bottomLeft: Radius.circular(24),\n                  bottomRight: Radius.circular(24),\n                ),\n              ),\n              child: Column(\n                crossAxisAlignment: CrossAxisAlignment.start,\n                children: [\n                  Row(\n                    mainAxisAlignment: MainAxisAlignment.spaceBetween,\n                    children: [\n                      Column(\n                        crossAxisAlignment: CrossAxisAlignment.start,\n                        children: [\n                          Text(\n                            'Find Your',\n                            style: TextStyle(\n                              color: Colors.white.withOpacity(0.9),\n                              fontSize: 24,\n                              fontWeight: FontWeight.w300,\n                            ),\n                          ),\n                          const Text(\n                            'Perfect Stay',\n                            style: TextStyle(\n                              color: Colors.white,\n                              fontSize: 32,\n                              fontWeight: FontWeight.bold,\n                            ),\n                          ),\n                        ],\n                      ),\n                      IconButton(\n                        icon: const Icon(Icons.notifications_outlined, color: Colors.white),\n                        onPressed: () {},\n                      ),\n                    ],\n                  ),\n                  const SizedBox(height: 16),\n                  // Search Bar\n                  TextField(\n                    controller: _searchController,\n                    onChanged: _searchHotels,\n                    style: const TextStyle(color: Colors.black87),\n                    decoration: InputDecoration(\n                      hintText: 'Search hotels, destinations...',\n                      hintStyle: TextStyle(color: Colors.grey[600]),\n                      prefixIcon: Icon(Icons.search, color: Colors.grey[600]),\n                      filled: true,\n                      fillColor: Colors.white,\n                      border: OutlineInputBorder(\n                        borderRadius: BorderRadius.circular(16),\n                        borderSide: BorderSide.none,\n                      ),\n                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),\n                    ),\n                  ),\n                ],\n              ),\n            ),\n            // Hotels List\n            Expanded(\n              child: _filteredHotels.isEmpty\n                  ? Center(\n                      child: Column(\n                        mainAxisAlignment: MainAxisAlignment.center,\n                        children: [\n                          Icon(Icons.search_off, size: 64, color: Colors.grey[400]),\n                          const SizedBox(height: 16),\n                          Text(\n                            'No hotels found',\n                            style: TextStyle(color: Colors.grey[600], fontSize: 18),\n                          ),\n                        ],\n                      ),\n                    )\n                  : ListView.builder(\n                      padding: const EdgeInsets.all(16),\n                      itemCount: _filteredHotels.length,\n                      itemBuilder: (context, index) {\n                        return HotelCard(\n                          hotel: _filteredHotels[index],\n                          onTap: () {\n                            Navigator.pushNamed(\n                              context,\n                              '/hotel-details',\n                              arguments: _filteredHotels[index],\n                            );\n                          },\n                        );\n                      },\n                    ),\n            ),\n          ],\n        ),\n      ),\n      bottomNavigationBar: BottomNavigationBar(\n        currentIndex: _selectedIndex,\n        onTap: _onNavBarTap,\n        selectedItemColor: Theme.of(context).colorScheme.primary,\n        unselectedItemColor: Colors.grey,\n        items: const [\n          BottomNavigationBarItem(\n            icon: Icon(Icons.home),\n            label: 'Home',\n          ),\n          BottomNavigationBarItem(\n            icon: Icon(Icons.book_online),\n            label: 'My Bookings',\n          ),\n          BottomNavigationBarItem(\n            icon: Icon(Icons.person),\n            label: 'Profile',\n          ),\n        ],\n      ),\n    );\n  }\n\n  @override\n  void dispose() {\n    _searchController.dispose();\n    super.dispose();\n  }\n}\n
+import 'package:flutter/material.dart';
+import '../models/hotel.dart';
+import '../services/hotel_service.dart';
+import '../widgets/hotel_card.dart';
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  List<Hotel> _hotels = [];
+  List<Hotel> _filteredHotels = [];
+  int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHotels();
+  }
+
+  void _loadHotels() {
+    setState(() {
+      _hotels = HotelService.getHotels();
+      _filteredHotels = _hotels;
+    });
+  }
+
+  void _searchHotels(String query) {
+    setState(() {
+      _filteredHotels = HotelService.searchHotels(query);
+    });
+  }
+
+  void _onNavBarTap(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+    
+    if (index == 1) {
+      Navigator.pushNamed(context, '/my-bookings');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(24),
+                  bottomRight: Radius.circular(24),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Find Your',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.9),
+                              fontSize: 24,
+                              fontWeight: FontWeight.w300,
+                            ),
+                          ),
+                          const Text(
+                            'Perfect Stay',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+                        onPressed: () {},
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Search Bar
+                  TextField(
+                    controller: _searchController,
+                    onChanged: _searchHotels,
+                    style: const TextStyle(color: Colors.black87),
+                    decoration: InputDecoration(
+                      hintText: 'Search hotels, destinations...',
+                      hintStyle: TextStyle(color: Colors.grey[600]),
+                      prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Hotels List
+            Expanded(
+              child: _filteredHotels.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No hotels found',
+                            style: TextStyle(color: Colors.grey[600], fontSize: 18),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _filteredHotels.length,
+                      itemBuilder: (context, index) {
+                        return HotelCard(
+                          hotel: _filteredHotels[index],
+                          onTap: () {
+                            Navigator.pushNamed(
+                              context,
+                              '/hotel-details',
+                              arguments: _filteredHotels[index],
+                            );
+                          },
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onNavBarTap,
+        selectedItemColor: Theme.of(context).colorScheme.primary,
+        unselectedItemColor: Colors.grey,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.book_online),
+            label: 'My Bookings',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+}

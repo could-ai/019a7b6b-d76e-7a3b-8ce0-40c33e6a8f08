@@ -1,1 +1,25 @@
-class Hotel {\n  final String id;\n  final String name;\n  final String location;\n  final String imageUrl;\n  final double rating;\n  final int reviewCount;\n  final double pricePerNight;\n  final List<String> amenities;\n  final String description;\n  final List<String> images;\n\n  Hotel({\n    required this.id,\n    required this.name,\n    required this.location,\n    required this.imageUrl,\n    required this.rating,\n    required this.reviewCount,\n    required this.pricePerNight,\n    required this.amenities,\n    required this.description,\n    required this.images,\n  });\n}\n
+class Hotel {
+  final String id;
+  final String name;
+  final String location;
+  final String imageUrl;
+  final double rating;
+  final int reviewCount;
+  final double pricePerNight;
+  final List<String> amenities;
+  final String description;
+  final List<String> images;
+
+  Hotel({
+    required this.id,
+    required this.name,
+    required this.location,
+    required this.imageUrl,
+    required this.rating,
+    required this.reviewCount,
+    required this.pricePerNight,
+    required this.amenities,
+    required this.description,
+    required this.images,
+  });
+}
